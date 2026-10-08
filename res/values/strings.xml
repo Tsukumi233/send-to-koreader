@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Send to KOReader</string>
+    <string name="send_label">发送到 KOReader</string>
+</resources>

@@ -1,0 +1,6 @@
+build/
+*.apk
+test/dav/
+test/jvm/
+test/*.log
+*.idsig
