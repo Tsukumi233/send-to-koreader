@@ -53,7 +53,7 @@ RemoteLibrary 0.2.0 有两个 bug，合并前需要手动修：
 ./build.sh
 ```
 
-需要 Android SDK build-tools 36.0.0、platform android-37、JDK 17+。`ANDROID_HOME` 未设置时默认 `%LOCALAPPDATA%/Android/Sdk`。脚本目前按 Windows（Git Bash）写的，其他平台把 `.exe` / `.bat` 后缀去掉即可。签名使用本机的 debug keystore。
+需要 Android SDK build-tools 36.0.0、platform android-37、JDK 17+。`ANDROID_HOME` 未设置时默认 `%LOCALAPPDATA%/Android/Sdk`。脚本目前按 Windows（Git Bash）写的，其他平台把 `.exe` / `.bat` 后缀去掉即可。签名使用 `~/.android/send-to-koreader-release.jks`（密码放在同目录的 `.pass` 文件里，可用 `RELEASE_KEYSTORE` 指定其他路径），找不到时退回 debug keystore。
 
 `test/` 下有一个 Python 模拟 WebDAV 服务器和 JVM 测试桩，用来在电脑上测试 `WebDav.java`。
 

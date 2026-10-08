@@ -20,6 +20,14 @@ javac -nowarn -source 17 -target 17 -encoding UTF-8 -classpath "$JAR" -d build/c
 cp build/base.apk build/unsigned.apk
 (cd build/dex && jar uf ../unsigned.apk classes.dex)
 "$BT/zipalign.exe" -f -p 4 build/unsigned.apk build/aligned.apk
-"$BT/apksigner.bat" sign --ks "$HOME/.android/debug.keystore" --ks-pass pass:android \
-    --key-pass pass:android --out send-to-koreader.apk build/aligned.apk
+# Release key if present (password in a .pass file next to it), else the debug key.
+KS="${RELEASE_KEYSTORE:-$HOME/.android/send-to-koreader-release.jks}"
+if [ -f "$KS" ]; then
+    KS=$(cygpath -w "$KS" 2>/dev/null || echo "$KS")
+    set -- --ks "$KS" --ks-pass "file:${KS%.jks}.pass"
+else
+    echo "release keystore not found, signing with the debug key" >&2
+    set -- --ks "$HOME/.android/debug.keystore" --ks-pass pass:android --key-pass pass:android
+fi
+"$BT/apksigner.bat" sign "$@" --out send-to-koreader.apk build/aligned.apk
 "$BT/apksigner.bat" verify send-to-koreader.apk && ls -la send-to-koreader.apk
