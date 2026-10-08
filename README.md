@@ -26,6 +26,10 @@ Kindle 的 "Send to Kindle" 体验，换成 KOReader + 你自己的 WebDAV 云�
 
 > 测试连接用的是"上传并删除一个探测文件"，因为 Android 的 `HttpURLConnection` 不支持 `PROPFIND`。如果你的账号没有删除权限，云端会留下一个 `.send-to-koreader-test` 文件，可以忽略。
 
+### iOS
+
+不需要装 App：按 [docs/ios-shortcut.md](docs/ios-shortcut.md) 搭一个快捷指令，同样出现在分享菜单里。
+
 ## KOReader 端
 
 1. 安装 [RemoteLibrary.koplugin](https://github.com/dani84bs/RemoteLibrary.koplugin)，在"云存储"里添加同一个 WebDAV 服务器，并把 Remote Library 的云端文件夹设为同一个文件夹。
