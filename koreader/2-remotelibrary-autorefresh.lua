@@ -109,6 +109,48 @@ local function download(dir, home, new)
     return done
 end
 
+-- A forked child inherits every fd of its parent, listening sockets included
+-- (e.g. HttpInspector's :8080). While the child lives the port stays bound
+-- even after the parent closes its copy, so re-listening on it fails with
+-- EADDRINUSE. Point inherited listening sockets at /dev/null: dup2 keeps the
+-- fd number taken, so a stale socket object being garbage-collected in the
+-- child can't close an fd the child has since reused.
+local function releaseInheritedListeners()
+    local ffi = require("ffi")
+    local C = ffi.C
+    require("ffi/posix_h")
+    pcall(ffi.cdef, "ssize_t readlink(const char *, char *, size_t);")
+    local listening = {}
+    for _, path in ipairs{ "/proc/net/tcp", "/proc/net/tcp6" } do
+        local f = io.open(path, "r")
+        if f then
+            for line in f:lines() do
+                local fields = {}
+                for field in line:gmatch("%S+") do fields[#fields + 1] = field end
+                if fields[4] == "0A" and fields[10] then -- 0A = TCP_LISTEN
+                    listening[fields[10]] = true
+                end
+            end
+            f:close()
+        end
+    end
+    if not next(listening) then return end
+    local devnull = C.open("/dev/null", C.O_RDWR)
+    if devnull < 0 then return end
+    local buf = ffi.new("char[64]")
+    for name in require("libs/libkoreader-lfs").dir("/proc/self/fd") do
+        local fd = tonumber(name)
+        if fd and fd > 2 and fd ~= devnull then
+            local len = C.readlink("/proc/self/fd/" .. name, buf, 63)
+            local inode = len > 0 and ffi.string(buf, len):match("^socket:%[(%d+)%]$")
+            if inode and listening[inode] then
+                C.dup2(devnull, fd)
+            end
+        end
+    end
+    C.close(devnull)
+end
+
 local function refresh(rl, reason)
     local function skip(why)
         logger.dbg("remotelibrary-autorefresh: skip", reason, why)
@@ -133,6 +175,7 @@ local function refresh(rl, reason)
     os.remove(STATUS_FILE)
 
     local pid = ffiutil.runInSubProcess(function()
+        releaseInheritedListeners()
         -- Only the single-request fast scan: the per-folder fallback needs the
         -- UI event loop, which a subprocess doesn't have.
         local tree
